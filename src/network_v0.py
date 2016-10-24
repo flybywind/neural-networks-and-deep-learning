@@ -1,3 +1,4 @@
+# -*- encoding: utf8 -*-
 """
 ~~~~~~~~~~
 把mini-batch部分改成矩阵运算形式
@@ -12,7 +13,7 @@ import numpy as np
 
 class Network(object):
 
-    def __init__(self, sizes, mini_batch_size):
+    def __init__(self, sizes, mini_batch_size=1):
         """The list ``sizes`` contains the number of neurons in the
         respective layers of the network.  For example, if the list
         was [2, 3, 1] then it would be a three-layer network, with the
@@ -25,7 +26,6 @@ class Network(object):
         ever used in computing the outputs from later layers."""
         self.num_layers = len(sizes)
         self.sizes = sizes
-        if !mini_batch_size: mini_batch_size = 1
         self.mini_batch_size = mini_batch_size
         self.biases = [np.random.randn(y, 1) for y in sizes[1:]]
         self.weights = [np.random.randn(y, x)
@@ -69,14 +69,14 @@ class Network(object):
         The ``mini_batch`` is a list of tuples ``(x, y)``, and ``eta``
         is the learning rate."""
         x, y = mini_batch[0]
-        for i in xrage(2, self.mini_batch_size):
+        for i in xrange(1, self.mini_batch_size):
             x = np.concatenate((x, mini_batch[i][0]), 1)
             y = np.concatenate((y, mini_batch[i][1]), 1)
 
         nabla_b, nabla_w = self.backprop(x, y)
-
-        self.weights = self.weights - eta/self.mini_batch_size * nabla_w
-        self.biases = self.biases - eta/self.mini_batch_size * nabla_b
+        M = self.mini_batch_size
+        self.weights = [w - eta/M * dw for w, dw in zip(self.weights, nabla_w)]
+        self.biases = [b - eta/M * db  for b, db in zip(self.biases, nabla_b)]
 
     def backprop(self, x, y):
         """Return a tuple ``(nabla_b, nabla_w)`` representing the
@@ -110,7 +110,7 @@ class Network(object):
             z = zs[-l]
             sp = sigmoid_prime(z)
             delta = np.dot(self.weights[-l+1].transpose(), delta) * sp
-            nabla_b[-l] = np.dot(delta, np.ones([self.mini_batch_size, 1])
+            nabla_b[-l] = np.dot(delta, np.ones([self.mini_batch_size, 1]))
             nabla_w[-l] = np.dot(delta, activations[-l-1].transpose())
         return (nabla_b, nabla_w)
 
